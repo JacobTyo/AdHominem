@@ -1211,6 +1211,7 @@ class AdHominem():
                     print(s)
 
             # compute accuracy on train set
+            # TODO: Update this to include the evaluation metrics used in the PAN competition
             acc_tr = self.compute_accuracy(TP, FP, TN, FN)
             # compute accuracy on test set (including PAN 2020 metrics and grid search for threshold)
             acc_te, scores, th = self.evaluate_model(docs_L_te, docs_R_te, labels_te, batch_size_te)

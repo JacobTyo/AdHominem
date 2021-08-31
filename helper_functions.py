@@ -11,68 +11,179 @@ from sklearn.utils import shuffle
 import random
 
 
+
+
 class Corpus(object):
 
     """
         Class for data preprocessing (8000 Amazon review pairs)
     """
-
-    def __init__(self, test_split=0.2, T_w=20, D_w=300, vocab_size_token=15000, vocab_size_chr=125):
+    # TODO: Update this to setup the data for the pan and gutenburg datasets
+    #  I think this is slow, so might need to rewrite for efficiency?
+    def __init__(self, test_split=0.2, T_w=20, D_w=300, vocab_size_token=15000, vocab_size_chr=125, dataset='amazon'):
 
         # define Spacy tokenizer
         self.tokenizer = spacy.load('en_core_web_lg')
-        
-        # load raw data
-        self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
 
-        # load pre-trained fastText word embedding model
-        self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+        if dataset == 'amazon':
 
-        # dimension of word embeddings
-        self.D_w = D_w
-        # maximum words per sentence
-        self.T_w = T_w
+            # load raw data
+            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
 
-        # split size of test set
-        self.test_split = test_split
+            # load pre-trained fastText word embedding model
+            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
 
-        # train set
-        self.docs_L_tr = []
-        self.docs_R_tr = []
-        self.labels_tr = []
+            # dimension of word embeddings
+            self.D_w = D_w
+            # maximum words per sentence
+            self.T_w = T_w
 
-        # test set
-        self.docs_L_te = []
-        self.docs_R_te = []
-        self.labels_te = []
+            # split size of test set
+            self.test_split = test_split
 
-        # vocabulary sizes
-        self.vocab_size_token = vocab_size_token
-        self.vocab_size_chr = vocab_size_chr
+            # train set
+            self.docs_L_tr = []
+            self.docs_R_tr = []
+            self.labels_tr = []
 
-        # token/word-based vocabulary
-        self.V_w = {'<ZP>': 0,  # zero-padding
-                    '<UNK>': 1,  # unknown token
-                    '<SOS>': 2,  # start of sentence
-                    '<EOS>': 3,  # end of sentence
-                    '<SLB>': 4,  # start with line-break
-                    '<ELB>': 5,  # end with line-break
-                    }
-        # character vocabulary
-        self.V_c = {'<ZP>': 0,  # zero-padding character
-                    '<UNK>': 1,  # "unknown"-character
-                    }
+            # test set
+            self.docs_L_te = []
+            self.docs_R_te = []
+            self.labels_te = []
 
-        # dictionary with token/character counts
-        self.dict_token_counts = {}
-        self.dict_chr_counts = {}
+            # vocabulary sizes
+            self.vocab_size_token = vocab_size_token
+            self.vocab_size_chr = vocab_size_chr
 
-        # unique list of most frequent tokens/characters
-        self.list_tokens = None
-        self.list_characters = None
+            # token/word-based vocabulary
+            self.V_w = {'<ZP>': 0,  # zero-padding
+                        '<UNK>': 1,  # unknown token
+                        '<SOS>': 2,  # start of sentence
+                        '<EOS>': 3,  # end of sentence
+                        '<SLB>': 4,  # start with line-break
+                        '<ELB>': 5,  # end with line-break
+                        }
+            # character vocabulary
+            self.V_c = {'<ZP>': 0,  # zero-padding character
+                        '<UNK>': 1,  # "unknown"-character
+                        }
 
-        # word embedding matrix
-        self.E_w = None
+            # dictionary with token/character counts
+            self.dict_token_counts = {}
+            self.dict_chr_counts = {}
+
+            # unique list of most frequent tokens/characters
+            self.list_tokens = None
+            self.list_characters = None
+
+            # word embedding matrix
+            self.E_w = None
+            # load raw data
+            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
+
+            # load pre-trained fastText word embedding model
+            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+
+            # dimension of word embeddings
+            self.D_w = D_w
+            # maximum words per sentence
+            self.T_w = T_w
+
+            # split size of test set
+            self.test_split = test_split
+
+            # train set
+            self.docs_L_tr = []
+            self.docs_R_tr = []
+            self.labels_tr = []
+
+            # test set
+            self.docs_L_te = []
+            self.docs_R_te = []
+            self.labels_te = []
+
+            # vocabulary sizes
+            self.vocab_size_token = vocab_size_token
+            self.vocab_size_chr = vocab_size_chr
+
+            # token/word-based vocabulary
+            self.V_w = {'<ZP>': 0,  # zero-padding
+                        '<UNK>': 1,  # unknown token
+                        '<SOS>': 2,  # start of sentence
+                        '<EOS>': 3,  # end of sentence
+                        '<SLB>': 4,  # start with line-break
+                        '<ELB>': 5,  # end with line-break
+                        }
+            # character vocabulary
+            self.V_c = {'<ZP>': 0,  # zero-padding character
+                        '<UNK>': 1,  # "unknown"-character
+                        }
+
+            # dictionary with token/character counts
+            self.dict_token_counts = {}
+            self.dict_chr_counts = {}
+
+            # unique list of most frequent tokens/characters
+            self.list_tokens = None
+            self.list_characters = None
+
+            # word embedding matrix
+            self.E_w = None
+
+        elif dataset == 'gutenburg':
+
+            # load raw data - read in the training data into a pandas dataframe
+            for root, dirs, files in os.walk('/home/')
+            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
+
+            # load pre-trained fastText word embedding model
+            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+
+            # dimension of word embeddings
+            self.D_w = D_w
+            # maximum words per sentence
+            self.T_w = T_w
+
+            # split size of test set
+            self.test_split = test_split
+
+            # train set
+            self.docs_L_tr = []
+            self.docs_R_tr = []
+            self.labels_tr = []
+
+            # test set
+            self.docs_L_te = []
+            self.docs_R_te = []
+            self.labels_te = []
+
+            # vocabulary sizes
+            self.vocab_size_token = vocab_size_token
+            self.vocab_size_chr = vocab_size_chr
+
+            # token/word-based vocabulary
+            self.V_w = {'<ZP>': 0,  # zero-padding
+                        '<UNK>': 1,  # unknown token
+                        '<SOS>': 2,  # start of sentence
+                        '<EOS>': 3,  # end of sentence
+                        '<SLB>': 4,  # start with line-break
+                        '<ELB>': 5,  # end with line-break
+                        }
+            # character vocabulary
+            self.V_c = {'<ZP>': 0,  # zero-padding character
+                        '<UNK>': 1,  # "unknown"-character
+                        }
+
+            # dictionary with token/character counts
+            self.dict_token_counts = {}
+            self.dict_chr_counts = {}
+
+            # unique list of most frequent tokens/characters
+            self.list_tokens = None
+            self.list_characters = None
+
+            # word embedding matrix
+            self.E_w = None
     
     # extract docs
     def extract_docs(self):
