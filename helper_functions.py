@@ -156,53 +156,47 @@ class Corpus(object):
             # word embedding matrix
             self.E_w = None
 
-    def extract_docs_work(self, idx):
-        print(idx)
-        temp = self.data_panda.review[idx]
-
-        temp = temp.split('$$$')
-
-        if random.uniform(0, 1) < 0.5:
-            doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-            doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-        else:
-            doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-            doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-
-        # preprocessing and tokenizing
-        doc_1 = self.preprocess_doc(doc_1)
-        doc_2 = self.preprocess_doc(doc_2)
-
-        r = self.data_panda['test_or_train'][idx]
-
-        if not r:
-            # count tokens/characters in train set
-            self.count_tokens_and_characters(doc_1)
-            self.count_tokens_and_characters(doc_2)
-
-        # add special tokens
-        doc_1 = self.add_special_tokens_doc(doc_1)
-        doc_2 = self.add_special_tokens_doc(doc_2)
-
-        if not r:
-            # add doc-pair to train set
-            self.docs_L_tr.append(doc_1)
-            self.docs_R_tr.append(doc_2)
-            self.labels_tr.append(self.data_panda.sentiment[idx])
-
-        else:
-            # ad doc-pair to test set
-            self.docs_L_te.append(doc_1)
-            self.docs_R_te.append(doc_2)
-            self.labels_te.append(self.data_panda.sentiment[idx])
-    
     # extract docs
     def extract_docs(self):
 
-        idxs = list(range(self.data_panda.review.shape[0]))
-        with Pool(14) as p:
-            p.map(self.extract_docs_work, idxs)
-            
+        for idx in tqdm(range(self.data_panda.review.shape[0]), desc='preprocess docs'):
+
+            temp = self.data_panda.review[idx].split('$$$')
+
+            if random.uniform(0, 1) < 0.5:
+                doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+                doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+            else:
+                doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+                doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+
+            # preprocessing and tokenizing
+            doc_1 = self.preprocess_doc(doc_1)
+            doc_2 = self.preprocess_doc(doc_2)
+
+            r = self.data_panda['test_or_train'][idx]
+
+            if not r:
+                # count tokens/characters in train set
+                self.count_tokens_and_characters(doc_1)
+                self.count_tokens_and_characters(doc_2)
+
+            # add special tokens
+            doc_1 = self.add_special_tokens_doc(doc_1)
+            doc_2 = self.add_special_tokens_doc(doc_2)
+
+            if not r:
+                # add doc-pair to train set
+                self.docs_L_tr.append(doc_1)
+                self.docs_R_tr.append(doc_2)
+                self.labels_tr.append(self.data_panda.sentiment[idx])
+
+            else:
+                # ad doc-pair to test set
+                self.docs_L_te.append(doc_1)
+                self.docs_R_te.append(doc_2)
+                self.labels_te.append(self.data_panda.sentiment[idx])
+
         # shuffle
         self.docs_L_tr, self.docs_R_tr, self.labels_tr = shuffle(self.docs_L_tr, self.docs_R_tr, self.labels_tr)
         self.docs_L_te, self.docs_R_te, self.labels_te = shuffle(self.docs_L_te, self.docs_R_te, self.labels_te)
