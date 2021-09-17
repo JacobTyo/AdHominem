@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+
 from bs4 import BeautifulSoup
 import spacy
 import textacy.preprocessing as tp
@@ -9,8 +11,10 @@ import fasttext
 import pandas as pd
 from sklearn.utils import shuffle
 import random
+import csv
+from multiprocessing import Pool
 
-
+csv.field_size_limit(sys.maxsize)
 
 
 class Corpus(object):
@@ -18,9 +22,8 @@ class Corpus(object):
     """
         Class for data preprocessing (8000 Amazon review pairs)
     """
-    # TODO: Update this to setup the data for the pan and gutenburg datasets
-    #  I think this is slow, so might need to rewrite for efficiency?
-    def __init__(self, test_split=0.2, T_w=20, D_w=300, vocab_size_token=15000, vocab_size_chr=125, dataset='amazon'):
+    def __init__(self, test_split=0.2, T_w=20, D_w=300, vocab_size_token=15000, vocab_size_chr=125, dataset='amazon',
+                 train_path=None, test_path=None):
 
         # define Spacy tokenizer
         self.tokenizer = spacy.load('en_core_web_lg')
@@ -28,58 +31,7 @@ class Corpus(object):
         if dataset == 'amazon':
 
             # load raw data
-            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
-
-            # load pre-trained fastText word embedding model
-            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
-
-            # dimension of word embeddings
-            self.D_w = D_w
-            # maximum words per sentence
-            self.T_w = T_w
-
-            # split size of test set
-            self.test_split = test_split
-
-            # train set
-            self.docs_L_tr = []
-            self.docs_R_tr = []
-            self.labels_tr = []
-
-            # test set
-            self.docs_L_te = []
-            self.docs_R_te = []
-            self.labels_te = []
-
-            # vocabulary sizes
-            self.vocab_size_token = vocab_size_token
-            self.vocab_size_chr = vocab_size_chr
-
-            # token/word-based vocabulary
-            self.V_w = {'<ZP>': 0,  # zero-padding
-                        '<UNK>': 1,  # unknown token
-                        '<SOS>': 2,  # start of sentence
-                        '<EOS>': 3,  # end of sentence
-                        '<SLB>': 4,  # start with line-break
-                        '<ELB>': 5,  # end with line-break
-                        }
-            # character vocabulary
-            self.V_c = {'<ZP>': 0,  # zero-padding character
-                        '<UNK>': 1,  # "unknown"-character
-                        }
-
-            # dictionary with token/character counts
-            self.dict_token_counts = {}
-            self.dict_chr_counts = {}
-
-            # unique list of most frequent tokens/characters
-            self.list_tokens = None
-            self.list_characters = None
-
-            # word embedding matrix
-            self.E_w = None
-            # load raw data
-            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
+            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon_short.csv')), sep='\t')
 
             # load pre-trained fastText word embedding model
             self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
@@ -132,9 +84,28 @@ class Corpus(object):
 
         elif dataset == 'gutenburg':
 
-            # load raw data - read in the training data into a pandas dataframe
-            for root, dirs, files in os.walk('/home/')
-            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
+            # load raw data into memory - read in the training data into a pandas dataframe
+            # I think we want two columns
+            #   reviews: both text snippets, separted by $$$
+            #   sentiment: label
+
+            def get_gdataset(pth, test_set):
+                if not pth:
+                    assert False, 'path to train and test data must be set'
+
+                df = pd.read_csv(train_path, names=['review', 'text2', 'sentiment'],
+                                 dtype={'review': str, 'text2': str, 'sentiment': int})
+
+                df['review'] = df['review'] + '$$$' + df['text2']
+                df = df.drop(columns=['text2'])
+                df['test_or_train'] = 1 if test_set else 0
+                return df
+
+            train_df = get_gdataset(train_path, False)
+
+            test_df = get_gdataset(test_path, True)
+
+            self.data_panda = pd.concat([train_df, test_df], ignore_index=True)
 
             # load pre-trained fastText word embedding model
             self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
@@ -184,47 +155,53 @@ class Corpus(object):
 
             # word embedding matrix
             self.E_w = None
+
+    def extract_docs_work(self, idx):
+        print(idx)
+        temp = self.data_panda.review[idx]
+
+        temp = temp.split('$$$')
+
+        if random.uniform(0, 1) < 0.5:
+            doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+            doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+        else:
+            doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+            doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+
+        # preprocessing and tokenizing
+        doc_1 = self.preprocess_doc(doc_1)
+        doc_2 = self.preprocess_doc(doc_2)
+
+        r = self.data_panda['test_or_train'][idx]
+
+        if not r:
+            # count tokens/characters in train set
+            self.count_tokens_and_characters(doc_1)
+            self.count_tokens_and_characters(doc_2)
+
+        # add special tokens
+        doc_1 = self.add_special_tokens_doc(doc_1)
+        doc_2 = self.add_special_tokens_doc(doc_2)
+
+        if not r:
+            # add doc-pair to train set
+            self.docs_L_tr.append(doc_1)
+            self.docs_R_tr.append(doc_2)
+            self.labels_tr.append(self.data_panda.sentiment[idx])
+
+        else:
+            # ad doc-pair to test set
+            self.docs_L_te.append(doc_1)
+            self.docs_R_te.append(doc_2)
+            self.labels_te.append(self.data_panda.sentiment[idx])
     
     # extract docs
     def extract_docs(self):
 
-        for idx in tqdm(range(self.data_panda.review.shape[0]), desc='preprocess docs'):
-
-            temp = self.data_panda.review[idx].split('$$$')
-
-            if random.uniform(0, 1) < 0.5:
-                doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-                doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-            else:
-                doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-                doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-
-            # preprocessing and tokenizing
-            doc_1 = self.preprocess_doc(doc_1)
-            doc_2 = self.preprocess_doc(doc_2)
-
-            r = random.uniform(0, 1)
-
-            if r > self.test_split:
-                # count tokens/characters in train set
-                self.count_tokens_and_characters(doc_1)
-                self.count_tokens_and_characters(doc_2)
-
-            # add special tokens
-            doc_1 = self.add_special_tokens_doc(doc_1)
-            doc_2 = self.add_special_tokens_doc(doc_2)
-
-            if r > self.test_split:
-                # add doc-pair to train set
-                self.docs_L_tr.append(doc_1)
-                self.docs_R_tr.append(doc_2)
-                self.labels_tr.append(self.data_panda.sentiment[idx])
-
-            else:
-                # ad doc-pair to test set
-                self.docs_L_te.append(doc_1)
-                self.docs_R_te.append(doc_2)
-                self.labels_te.append(self.data_panda.sentiment[idx])
+        idxs = list(range(self.data_panda.review.shape[0]))
+        with Pool(14) as p:
+            p.map(self.extract_docs_work, idxs)
             
         # shuffle
         self.docs_L_tr, self.docs_R_tr, self.labels_tr = shuffle(self.docs_L_tr, self.docs_R_tr, self.labels_tr)
