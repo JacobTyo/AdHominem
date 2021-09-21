@@ -17,6 +17,101 @@ from multiprocessing import Pool
 csv.field_size_limit(sys.maxsize)
 
 
+def add_special_tokens_doc_multiproc(doc, T_w):
+    # add <SOS>
+    N_w = []
+    for i, sent in enumerate(doc):
+        tokens = sent.split()
+        doc[i] = ['<SOS>'] + tokens
+        N_w.append(len(doc[i]))
+
+    # add <EOS> or <ELB> or <SLB>
+    doc_new = []
+    for i, sent in enumerate(doc):
+        # short sentence
+        if N_w[i] <= T_w - 1:
+            tokens = sent + ['<EOS>']
+            doc_new.append(' '.join(tokens))
+        # long sentence
+        else:
+            while len(sent) > 1:
+                if len(sent) <= T_w - 1:
+                    tokens = sent[:T_w - 1] + ['<EOS>']
+                    doc_new.append(' '.join(tokens))
+                else:
+                    tokens = sent[:T_w - 1] + ['<ELB>']
+                    doc_new.append(' '.join(tokens))
+                sent = ['<SLB>'] + sent[T_w - 1:]
+
+    return doc_new
+
+
+def count_tokens_and_characters_multiproc(doc):
+    dict_chr_counts, dict_token_counts = {}, {}
+    for sent in doc:
+        tokens = sent.split()
+        for token in tokens:
+            for chr in token:
+                if chr not in dict_chr_counts:
+                    dict_chr_counts[chr] = 0
+                dict_chr_counts[chr] += 1
+            if token not in dict_token_counts:
+                dict_token_counts[token] = 0
+            dict_token_counts[token] += 1
+    return dict_chr_counts, dict_token_counts
+
+
+def preprocess_multiproc(doc, tokenizer):
+    # pre-process data
+    doc = tp.normalize.normalize_unicode(doc)
+    doc = tp.normalize_whitespace(doc)
+    doc = tp.normalize_quotation_marks(doc)
+
+    # apply spaCy to tokenize doc
+    doc = tokenizer(doc)
+
+    # build new sentences for pre-processed doc
+    doc_new = []
+    for sent in doc.sents:
+        sent_new = ''
+        for token in sent:
+            token = token.text
+            token = token.replace('\n', '')
+            token = token.replace('\t', '')
+            token = token.strip()
+            sent_new += token + ' '
+        doc_new.append(sent_new[:-1])
+    return doc_new
+
+def extract_docs_work(review, label, is_test_datapoint, tokenizer, T_w):
+    temp = review.split('$$$')
+
+    if random.uniform(0, 1) < 0.5:
+        doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+        doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+    else:
+        doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+        doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+
+    # preprocessing and tokenizing
+    doc_1 = preprocess_multiproc(doc_1, tokenizer)
+    doc_2 = preprocess_multiproc(doc_2, tokenizer)
+
+    char_counts1, token_counts1 = None, None
+    char_counts2, token_counts2 = None, None
+
+    if not is_test_datapoint:
+        # count tokens/characters in train set
+        char_counts1, token_counts1 = count_tokens_and_characters_multiproc(doc_1)
+        char_counts2, token_counts2 = count_tokens_and_characters_multiproc(doc_2)
+
+    # add special tokens
+    doc_1 = add_special_tokens_doc_multiproc(doc_1, T_w)
+    doc_2 = add_special_tokens_doc_multiproc(doc_2, T_w)
+
+    return doc_1, doc_2, label, is_test_datapoint, char_counts1, token_counts1, char_counts2, token_counts2
+
+
 class Corpus(object):
 
     """
@@ -156,48 +251,68 @@ class Corpus(object):
             # word embedding matrix
             self.E_w = None
 
+    def update_self(self, doc_1, doc_2, label, is_test_datapoint, char_counts1, token_counts1, char_counts2, token_counts2):
+        if not is_test_datapoint:
+            self.update_count_tokens_and_characters(char_counts1, token_counts1, char_counts2, token_counts2)
+
+        if is_test_datapoint:
+            # ad doc-pair to test set
+            self.docs_L_te.append(doc_1)
+            self.docs_R_te.append(doc_2)
+            self.labels_te.append(label)
+
+        else:
+            # add doc-pair to train set
+            self.docs_L_tr.append(doc_1)
+            self.docs_R_tr.append(doc_2)
+            self.labels_tr.append(label)
+
+
+    def update_count_tokens_and_characters(self, char_counts1, token_counts1, char_counts2, token_counts2):
+        # the inputs are dicts and need added to the self dict object
+        for chars, tokens in [(char_counts1, token_counts1), (char_counts2, token_counts2)]:
+
+            for k, v in chars:
+                if k not in self.dict_chr_counts.keys():
+                    self.dict_chr_counts[k] = v
+                else:
+                    self.dict_chr_counts[k] += v
+
+            for k, v in tokens:
+                if k not in self.dict_token_counts:
+                    self.dict_token_counts = v
+                else:
+                    self.dict_token_counts += v
+
     # extract docs
     def extract_docs(self):
 
-        for idx in tqdm(range(self.data_panda.review.shape[0]), desc='preprocess docs'):
+        with Pool(processes=4) as pool:
 
-            temp = self.data_panda.review[idx].split('$$$')
+            async_results = {}
 
-            if random.uniform(0, 1) < 0.5:
-                doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-                doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-            else:
-                doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-                doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+            for idx in tqdm(range(self.data_panda.review.shape[0]), desc='preprocess docs'):
 
-            # preprocessing and tokenizing
-            doc_1 = self.preprocess_doc(doc_1)
-            doc_2 = self.preprocess_doc(doc_2)
+                async_results[idx] = pool.apply_async(extract_docs_work, (self.data_panda.review[idx],
+                                                                          self.data_panda.sentiment[idx],
+                                                                          self.data_panda.train_or_test[idx],
+                                                                          self.tokenizer,
+                                                                          self.T_w))
 
-            r = self.data_panda['test_or_train'][idx]
+            done = False
+            while not done:
+                remove_idxs = []
+                for idx, result in async_results.items():
+                    if result.ready():
+                        res = result.get()
+                        # do the things with this data. . .
+                        self.update_self(*res)
+                        remove_idxs.append(idx)
+                for idx in remove_idxs:
+                    del async_results[idx]
+                if len(async_results.keys()) < 1:
+                    done = True
 
-            if not r:
-                # count tokens/characters in train set
-                self.count_tokens_and_characters(doc_1)
-                self.count_tokens_and_characters(doc_2)
-
-            # add special tokens
-            doc_1 = self.add_special_tokens_doc(doc_1)
-            doc_2 = self.add_special_tokens_doc(doc_2)
-
-            if not r:
-                # add doc-pair to train set
-                self.docs_L_tr.append(doc_1)
-                self.docs_R_tr.append(doc_2)
-                self.labels_tr.append(self.data_panda.sentiment[idx])
-
-            else:
-                # ad doc-pair to test set
-                self.docs_L_te.append(doc_1)
-                self.docs_R_te.append(doc_2)
-                self.labels_te.append(self.data_panda.sentiment[idx])
-
-        # shuffle
         self.docs_L_tr, self.docs_R_tr, self.labels_tr = shuffle(self.docs_L_tr, self.docs_R_tr, self.labels_tr)
         self.docs_L_te, self.docs_R_te, self.labels_te = shuffle(self.docs_L_te, self.docs_R_te, self.labels_te)
 
