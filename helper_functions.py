@@ -13,9 +13,13 @@ from sklearn.utils import shuffle
 import random
 import csv
 from multiprocessing import Pool
+import time 
+import copy
+
 
 csv.field_size_limit(sys.maxsize)
 
+TOKENIZER = spacy.load('en_core_web_lg')
 
 def add_special_tokens_doc_multiproc(doc, T_w):
     # add <SOS>
@@ -61,14 +65,14 @@ def count_tokens_and_characters_multiproc(doc):
     return dict_chr_counts, dict_token_counts
 
 
-def preprocess_multiproc(doc, tokenizer):
+def preprocess_multiproc(doc): #, tokenizer):
     # pre-process data
     doc = tp.normalize.normalize_unicode(doc)
     doc = tp.normalize_whitespace(doc)
     doc = tp.normalize_quotation_marks(doc)
 
     # apply spaCy to tokenize doc
-    doc = tokenizer(doc)
+    doc = TOKENIZER(doc)
 
     # build new sentences for pre-processed doc
     doc_new = []
@@ -83,7 +87,7 @@ def preprocess_multiproc(doc, tokenizer):
         doc_new.append(sent_new[:-1])
     return doc_new
 
-def extract_docs_work(review, label, is_test_datapoint, tokenizer, T_w):
+def extract_docs_work(review, label, is_test_datapoint, tokenizer=None, T_w=None):
     temp = review.split('$$$')
 
     if random.uniform(0, 1) < 0.5:
@@ -94,8 +98,8 @@ def extract_docs_work(review, label, is_test_datapoint, tokenizer, T_w):
         doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
 
     # preprocessing and tokenizing
-    doc_1 = preprocess_multiproc(doc_1, tokenizer)
-    doc_2 = preprocess_multiproc(doc_2, tokenizer)
+    doc_1 = preprocess_multiproc(doc_1) # , tokenizer)
+    doc_2 = preprocess_multiproc(doc_2) # , tokenizer)
 
     char_counts1, token_counts1 = None, None
     char_counts2, token_counts2 = None, None
@@ -193,7 +197,7 @@ class Corpus(object):
 
                 df['review'] = df['review'] + '$$$' + df['text2']
                 df = df.drop(columns=['text2'])
-                df['test_or_train'] = 1 if test_set else 0
+                df['is_test_datapoint'] = 1 if test_set else 0
                 return df
 
             train_df = get_gdataset(train_path, False)
@@ -272,46 +276,59 @@ class Corpus(object):
         # the inputs are dicts and need added to the self dict object
         for chars, tokens in [(char_counts1, token_counts1), (char_counts2, token_counts2)]:
 
-            for k, v in chars:
-                if k not in self.dict_chr_counts.keys():
+            for k, v in chars.items():
+                if k not in self.dict_chr_counts:
                     self.dict_chr_counts[k] = v
                 else:
                     self.dict_chr_counts[k] += v
 
-            for k, v in tokens:
+            for k, v in tokens.items():
                 if k not in self.dict_token_counts:
-                    self.dict_token_counts = v
+                    self.dict_token_counts[k] = v
                 else:
-                    self.dict_token_counts += v
+                    self.dict_token_counts[k] += v
 
     # extract docs
     def extract_docs(self):
 
-        with Pool(processes=4) as pool:
+        with Pool(processes=100) as pool:
 
             async_results = {}
 
             for idx in tqdm(range(self.data_panda.review.shape[0]), desc='preprocess docs'):
 
-                async_results[idx] = pool.apply_async(extract_docs_work, (self.data_panda.review[idx],
-                                                                          self.data_panda.sentiment[idx],
-                                                                          self.data_panda.train_or_test[idx],
-                                                                          self.tokenizer,
+                async_results[idx] = pool.apply_async(extract_docs_work, (copy.deepcopy(self.data_panda.review[idx]),
+                                                                          copy.deepcopy(self.data_panda.sentiment[idx]),
+                                                                          copy.deepcopy(self.data_panda.is_test_datapoint[idx]),
+                                                                          None, #self.tokenizer,
                                                                           self.T_w))
 
             done = False
+            start_time = time.time() 
+            last_check = time.time()
+            loops = 0 
+            num_removed = 0
             while not done:
                 remove_idxs = []
+                loops += 1
                 for idx, result in async_results.items():
                     if result.ready():
                         res = result.get()
                         # do the things with this data. . .
                         self.update_self(*res)
                         remove_idxs.append(idx)
+                num_removed += len(remove_idxs) 
                 for idx in remove_idxs:
                     del async_results[idx]
                 if len(async_results.keys()) < 1:
                     done = True
+                if time.time() - last_check > 30:
+                    elapsed = time.time() - start_time
+                    print(f'{len(list(async_results.keys()))} results remaining in queue, {elapsed:.2f}, {num_removed} removed, {loops} loops ran.', end='\r')
+                    last_check = time.time()
+                    num_removed = 0
+
+        print('done!') 
 
         self.docs_L_tr, self.docs_R_tr, self.labels_tr = shuffle(self.docs_L_tr, self.docs_R_tr, self.labels_tr)
         self.docs_L_te, self.docs_R_te, self.labels_te = shuffle(self.docs_L_te, self.docs_R_te, self.labels_te)
