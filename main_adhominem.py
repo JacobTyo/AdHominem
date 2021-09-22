@@ -37,7 +37,7 @@ def main():
         os.makedirs(dir_results)
 
     # load docs, vocabularies and initialized word embeddings
-    with open('/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem', 'rb') as f:
+    with open('/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl', 'rb') as f:
         docs_L_tr, docs_R_tr, labels_tr, \
         docs_L_te, docs_R_te, labels_te, \
         V_w, E_w, V_c = pickle.load(f)
