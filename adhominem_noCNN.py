@@ -7,7 +7,7 @@ from sklearn.utils import shuffle
 from eval_metrics import evaluate_all
 
 
-class AdHominem():
+class AdHominem_NoCNN():
     """
         AdHominem describes a Siamese network topology for (binary) authorship verification, also known as pairwise
         (1:1) forensic text comparison.
@@ -56,7 +56,7 @@ class AdHominem():
         # loss function
         if self.hyper_parameters['loss'] == 'contrastive':
             self.loss = self.contrastive_loss_function()
-        elif self.hyper_parameters['loss'] == 'modified_contastive':
+        elif self.hyper_parameters['loss'] == 'modified_contrastive':
             self.loss = self.loss_function()
         else:
             tmp = self.hyper_parameters['loss']

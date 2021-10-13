@@ -56,7 +56,7 @@ class AdHominem():
         # loss function
         if self.hyper_parameters['loss'] == 'contrastive':
             self.loss = self.contrastive_loss_function()
-        elif self.hyper_parameters['loss'] == 'modified_contastive':
+        elif self.hyper_parameters['loss'] == 'modified_contrastive':
             self.loss = self.loss_function()
         else:
             tmp = self.hyper_parameters['loss']

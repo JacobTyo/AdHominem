@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from adhominem import AdHominem
+from adhominem_noCNN import AdHominem_NoCNN
 import pickle
 import os
 import argparse
@@ -31,6 +32,7 @@ def main():
     parser.add_argument('-keep_prob_metric', default=0.9, type=float)  # dropout for metric learning layer
     parser.add_argument('-results_file', default='results.txt', type=str)
     parser.add_argument('-loss', default='modified_contrastive', type=str)
+    parser.add_argument('-no_cnn', action='store_true')
     hyper_parameters = vars(parser.parse_args())
 
     # create folder for results
@@ -71,9 +73,14 @@ def main():
             open(file_results, 'a').write(hp + ': ' + str(hyper_parameters[hp]) + '\n')
 
     # load neural network model
-    adhominem = AdHominem(hyper_parameters=hyper_parameters,
-                          E_w_init=E_w
-                          )
+    if hyper_parameters['no_cnn']:
+        adhominem = AdHominem_NoCNN(hyper_parameters=hyper_parameters,
+                                    E_w_init=E_w
+                                    )
+    else:
+        adhominem = AdHominem(hyper_parameters=hyper_parameters,
+                              E_w_init=E_w
+                              )
     # start training
     train_set = (docs_L_tr, docs_R_tr, labels_tr)
     test_set = (docs_L_te, docs_R_te, labels_te)
