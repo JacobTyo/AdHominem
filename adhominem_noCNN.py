@@ -314,62 +314,62 @@ class AdHominem_NoCNN():
     ########################################
     # 1D-CNN for characters-to-word encoding
     ########################################
-    def cnn_layer_cw(self, e_c):
-
-        T_s = self.hyper_parameters['T_s']
-        T_w = self.hyper_parameters['T_w']
-        T_c = self.hyper_parameters['T_c']
-        h = self.hyper_parameters['w']
-        D_c = self.hyper_parameters['D_c']
-        D_r = self.hyper_parameters['D_r']
-
-        is_training = self.placeholders['is_training']
-        dropout_mask = tf.concat([self.dropout['cnn'],
-                                  self.dropout['cnn']],
-                                 axis=0)
-
-        # dropout and zero-padding
-        # reshape: [2 * B, T_s, T_w, T_c, D_c] --> [2 * B * T_s * T_w, T_c, D_c]
-        e_c = tf.reshape(e_c, shape=[2 * self.B * T_s * T_w, T_c, D_c])
-        # dropout
-        e_c = tf.cond(tf.equal(is_training, tf.constant(True)),
-                      lambda: tf.multiply(dropout_mask, e_c),
-                      lambda: e_c,
-                      )
-        # zero-padding, shape = [2 * B * T_s * T_w, T_c + 2 * (h-1), D_c]
-        e_c = tf.pad(e_c,
-                     tf.constant([[0, 0], [h - 1, h - 1], [0, 0]]),
-                     mode='CONSTANT',
-                     )
-
-        # 1D convolution
-        # shape = [2 * B * T_s * T_w, T_c + 2 * (h-1) - h + 1, D_r] = [2 * B * T_s * T_w, T_c + h - 1, D_r]
-        r_c = tf.nn.conv1d(e_c,
-                           self.theta['cnn']['W'],
-                           stride=1,
-                           padding='VALID',
-                           name='chraracter_1D_cnn',
-                           )
-        # apply bias term
-        r_c = tf.nn.bias_add(r_c, self.theta['cnn']['b'])
-        # apply nonlinear function
-        r_c = tf.nn.tanh(r_c)
-
-        # max-over-time pooling
-        # shape = [2 * B * T_s * T_w, T_c + h - 1, D_r, 1]
-        r_c = tf.expand_dims(r_c, 3)
-        # max-over-time-pooling, shape = [2 * B * T_s * T_w, 1, D_r, 1]
-        r_c = tf.nn.max_pool(r_c,
-                             ksize=[1, T_c + h - 1, 1, 1],
-                             strides=[1, 1, 1, 1],
-                             padding='VALID',
-                             )
-        # shape = [2 + B * T_s * T_w, D_r]
-        r_c = tf.squeeze(r_c)
-        #  shape = [2 * B, T_s, T_w, D_r]
-        r_c = tf.reshape(r_c, [2 * self.B, T_s, T_w, D_r])
-
-        return r_c
+    # def cnn_layer_cw(self, e_c):
+    #
+    #     T_s = self.hyper_parameters['T_s']
+    #     T_w = self.hyper_parameters['T_w']
+    #     T_c = self.hyper_parameters['T_c']
+    #     h = self.hyper_parameters['w']
+    #     D_c = self.hyper_parameters['D_c']
+    #     D_r = self.hyper_parameters['D_r']
+    #
+    #     is_training = self.placeholders['is_training']
+    #     dropout_mask = tf.concat([self.dropout['cnn'],
+    #                               self.dropout['cnn']],
+    #                              axis=0)
+    #
+    #     # dropout and zero-padding
+    #     # reshape: [2 * B, T_s, T_w, T_c, D_c] --> [2 * B * T_s * T_w, T_c, D_c]
+    #     e_c = tf.reshape(e_c, shape=[2 * self.B * T_s * T_w, T_c, D_c])
+    #     # dropout
+    #     e_c = tf.cond(tf.equal(is_training, tf.constant(True)),
+    #                   lambda: tf.multiply(dropout_mask, e_c),
+    #                   lambda: e_c,
+    #                   )
+    #     # zero-padding, shape = [2 * B * T_s * T_w, T_c + 2 * (h-1), D_c]
+    #     e_c = tf.pad(e_c,
+    #                  tf.constant([[0, 0], [h - 1, h - 1], [0, 0]]),
+    #                  mode='CONSTANT',
+    #                  )
+    #
+    #     # 1D convolution
+    #     # shape = [2 * B * T_s * T_w, T_c + 2 * (h-1) - h + 1, D_r] = [2 * B * T_s * T_w, T_c + h - 1, D_r]
+    #     r_c = tf.nn.conv1d(e_c,
+    #                        self.theta['cnn']['W'],
+    #                        stride=1,
+    #                        padding='VALID',
+    #                        name='chraracter_1D_cnn',
+    #                        )
+    #     # apply bias term
+    #     r_c = tf.nn.bias_add(r_c, self.theta['cnn']['b'])
+    #     # apply nonlinear function
+    #     r_c = tf.nn.tanh(r_c)
+    #
+    #     # max-over-time pooling
+    #     # shape = [2 * B * T_s * T_w, T_c + h - 1, D_r, 1]
+    #     r_c = tf.expand_dims(r_c, 3)
+    #     # max-over-time-pooling, shape = [2 * B * T_s * T_w, 1, D_r, 1]
+    #     r_c = tf.nn.max_pool(r_c,
+    #                          ksize=[1, T_c + h - 1, 1, 1],
+    #                          strides=[1, 1, 1, 1],
+    #                          padding='VALID',
+    #                          )
+    #     # shape = [2 + B * T_s * T_w, D_r]
+    #     r_c = tf.squeeze(r_c)
+    #     #  shape = [2 * B, T_s, T_w, D_r]
+    #     r_c = tf.reshape(r_c, [2 * self.B, T_s, T_w, D_r])
+    #
+    #     return r_c
 
     #############################################
     # BiLSTM layer for words-to-sentence encoding
@@ -729,10 +729,10 @@ class AdHominem_NoCNN():
 
         dropout = {}
 
-        with tf.variable_scope('dropout_cnn'):
-            dropout['cnn'] = self.make_dropout_mask(shape=[self.B * T_s * T_w, T_c, D_c],
-                                                    keep_prob=self.hyper_parameters['keep_prob_cnn'],
-                                                    )
+        # with tf.variable_scope('dropout_cnn'):
+        #     dropout['cnn'] = self.make_dropout_mask(shape=[self.B * T_s * T_w, T_c, D_c],
+        #                                             keep_prob=self.hyper_parameters['keep_prob_cnn'],
+        #                                             )
         with tf.variable_scope('dropout_lstm_ws_forward'):
             dropout['lstm_ws_forward'] = {}
             dropout['lstm_ws_forward']['x'] = self.make_dropout_mask(shape=[self.B * T_s, D_w],  # + D_r],
@@ -800,8 +800,8 @@ class AdHominem_NoCNN():
 
         theta = {}
 
-        with tf.variable_scope('theta_cnn'):
-            theta['cnn'] = self.initialize_cnn(D_c, D_r, h)
+        # with tf.variable_scope('theta_cnn'):
+        #     theta['cnn'] = self.initialize_cnn(D_c, D_r, h)
 
         with tf.variable_scope('theta_lstm_ws_forward'):
             theta['lstm_ws_forward'] = self.initialize_lstm(D_w, D_s)  # (D_w + D_r, D_s)
@@ -840,23 +840,23 @@ class AdHominem_NoCNN():
                  }
         return theta
 
-    def initialize_cnn(self, D_in, D_out, h):
-        r = 0.1
-        theta = {'W': tf.get_variable(name='W',
-                                      shape=[h, D_in, D_out],
-                                      initializer=tf.initializers.random_uniform(minval=-r, maxval=r),
-                                      trainable=True,
-                                      dtype=tf.float32,
-                                      ),
-                 'b': tf.get_variable(name='b',
-                                      shape=[D_out],
-                                      initializer=tf.constant_initializer(0.0),
-                                      trainable=True,
-                                      dtype=tf.float32,
-                                      ),
-                 }
-
-        return theta
+    # def initialize_cnn(self, D_in, D_out, h):
+    #     r = 0.1
+    #     theta = {'W': tf.get_variable(name='W',
+    #                                   shape=[h, D_in, D_out],
+    #                                   initializer=tf.initializers.random_uniform(minval=-r, maxval=r),
+    #                                   trainable=True,
+    #                                   dtype=tf.float32,
+    #                                   ),
+    #              'b': tf.get_variable(name='b',
+    #                                   shape=[D_out],
+    #                                   initializer=tf.constant_initializer(0.0),
+    #                                   trainable=True,
+    #                                   dtype=tf.float32,
+    #                                   ),
+    #              }
+    #
+    #     return theta
 
     def initialize_att(self, D_in, D_out):
         r = 0.03
