@@ -183,8 +183,8 @@ class AdHominem_NoFastText():
                         'x_w_L': x_w_L,
                         'x_w_R': x_w_R,
                         #
-                        # 'e_w_L': e_w_L,
-                        # 'e_w_R': e_w_R,
+                        'e_w_L': e_w_L,
+                        'e_w_R': e_w_R,
                         #
                         'N_w_L': N_w_L,
                         'N_w_R': N_w_R,
