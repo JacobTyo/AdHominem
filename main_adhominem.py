@@ -30,6 +30,7 @@ def main():
     parser.add_argument('-keep_prob_att', default=0.9, type=float)  # dropout for attention layer
     parser.add_argument('-keep_prob_metric', default=0.9, type=float)  # dropout for metric learning layer
     parser.add_argument('-results_file', default='results.txt', type=str)
+    parser.add_argument('-loss', default='modified_contrastive', type=str)
     hyper_parameters = vars(parser.parse_args())
 
     # create folder for results
@@ -71,8 +72,7 @@ def main():
 
     # load neural network model
     adhominem = AdHominem(hyper_parameters=hyper_parameters,
-                          E_w_init=E_w,
-                          loss='contrastive'
+                          E_w_init=E_w
                           )
     # start training
     train_set = (docs_L_tr, docs_R_tr, labels_tr)

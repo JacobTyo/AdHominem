@@ -18,7 +18,7 @@ class AdHominem():
         [2] Benedikt Boenninghoff, Steffen Hessler, Dorothea Kolossa, Robert M. Nickel 'Explainable Authorship
             Verification in Social Media via Attention-based Similarity Learning', IEEE BigData 2019.
     """
-    def __init__(self, hyper_parameters, E_w_init, loss='modified_contrastive'):
+    def __init__(self, hyper_parameters, E_w_init):
 
         # reset graph
         tf.reset_default_graph()
@@ -54,12 +54,13 @@ class AdHominem():
             self.pred = self.kernel_function()
 
         # loss function
-        if loss == 'contrastive':
+        if self.hyper_parameters['loss'] == 'contrastive':
             self.loss = self.contrastive_loss_function()
-        elif loss == 'modified_contastive':
+        elif self.hyper_parameters['loss'] == 'modified_contastive':
             self.loss = self.loss_function()
         else:
-            assert False, f'{loss} is not defined as a loss function'
+            tmp = self.hyper_parameters['loss']
+            assert False, f'{tmp} is not defined as a loss function'
 
         # optimizer
         self.optimizer, self.step = self.prepare_optimizer()
