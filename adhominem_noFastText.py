@@ -81,7 +81,7 @@ class AdHominem_NoFastText():
 
         # local gradient normalization
         grads_and_vars = opt.compute_gradients(self.loss)
-        clipped_grads_and_vars = [(tf.clip_by_norm(grad, 1.0), var) for grad, var in grads_and_vars]
+        clipped_grads_and_vars = [(tf.clip_by_norm(grad, 1.0), var) if grad is not None and var is not None else (grad, var) for grad, var in grads_and_vars]
         optimizer = opt.apply_gradients(clipped_grads_and_vars, global_step=global_step)
 
         return optimizer, global_step
