@@ -138,28 +138,28 @@ class AdHominem_NoFastText():
         N_s_L = tf.placeholder(dtype=tf.int32, shape=[None], name='N_s_L')
         N_s_R = tf.placeholder(dtype=tf.int32, shape=[None], name='N_s_R')
 
-        # # matrix for word embeddings, shape=[len(V_w), D_w]
-        # with tf.variable_scope("word_embedding_matrix"):
-        #     # zero-padding embedding
-        #     E_w_0 = tf.zeros(shape=[1, D_w], dtype=tf.float32)
-        #     # trainable special tokens
-        #     E_w_1 = tf.Variable(E_w_init[1:6, :],
-        #                         name='E_trainable_special_tokens',
-        #                         trainable=True,
-        #                         dtype=tf.float32,
-        #                         )
-        #     # pre-trained word embeddings
-        #     E_w_2 = tf.Variable(E_w_init[6:, :],
-        #                         name='E_pretrained_tokens',
-        #                         trainable=train_word_embeddings,
-        #                         dtype=tf.float32,
-        #                         )
-        #     # concatenate special-token embeddings + regular-token embeddings
-        #     E_w = tf.concat([E_w_0, E_w_1, E_w_2], axis=0)
-        #
-        # # word embeddings, shape=[B, T_s, T_w, D_w]
-        # e_w_L = tf.nn.embedding_lookup(E_w, x_w_L)
-        # e_w_R = tf.nn.embedding_lookup(E_w, x_w_R)
+        # matrix for word embeddings, shape=[len(V_w), D_w]
+        with tf.variable_scope("word_embedding_matrix"):
+            # zero-padding embedding
+            E_w_0 = tf.zeros(shape=[1, D_w], dtype=tf.float32)
+            # trainable special tokens
+            E_w_1 = tf.Variable(E_w_init[1:6, :],
+                                name='E_trainable_special_tokens',
+                                trainable=True,
+                                dtype=tf.float32,
+                                )
+            # pre-trained word embeddings
+            E_w_2 = tf.Variable(E_w_init[6:, :],
+                                name='E_pretrained_tokens',
+                                trainable=train_word_embeddings,
+                                dtype=tf.float32,
+                                )
+            # concatenate special-token embeddings + regular-token embeddings
+            E_w = tf.concat([E_w_0, E_w_1, E_w_2], axis=0)
+
+        # word embeddings, shape=[B, T_s, T_w, D_w]
+        e_w_L = tf.nn.embedding_lookup(E_w, x_w_L)
+        e_w_R = tf.nn.embedding_lookup(E_w, x_w_R)
 
         ####################
         # training variables
