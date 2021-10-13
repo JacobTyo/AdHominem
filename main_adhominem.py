@@ -34,7 +34,7 @@ def main():
     parser.add_argument('-results_file', default='results.txt', type=str)
     parser.add_argument('-loss', default='modified_contrastive', type=str)
     parser.add_argument('-no_cnn', action='store_true')
-    parser.add_argumnet('-no_fasttext', action='store_true')
+    parser.add_argument('-no_fasttext', action='store_true')
     hyper_parameters = vars(parser.parse_args())
 
     # create folder for results
