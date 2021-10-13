@@ -71,6 +71,7 @@ def main():
     # load neural network model
     adhominem = AdHominem(hyper_parameters=hyper_parameters,
                           E_w_init=E_w,
+                          loss='contrastive'
                           )
     # start training
     train_set = (docs_L_tr, docs_R_tr, labels_tr)

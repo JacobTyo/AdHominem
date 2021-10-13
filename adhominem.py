@@ -18,7 +18,7 @@ class AdHominem():
         [2] Benedikt Boenninghoff, Steffen Hessler, Dorothea Kolossa, Robert M. Nickel 'Explainable Authorship
             Verification in Social Media via Attention-based Similarity Learning', IEEE BigData 2019.
     """
-    def __init__(self, hyper_parameters, E_w_init):
+    def __init__(self, hyper_parameters, E_w_init, loss='modified_contrastive'):
 
         # reset graph
         tf.reset_default_graph()
@@ -54,7 +54,13 @@ class AdHominem():
             self.pred = self.kernel_function()
 
         # loss function
-        self.loss = self.loss_function()
+        if loss == 'contrastive':
+            self.loss = self.contrastive_loss_function()
+        elif loss == 'modified_contastive':
+            self.loss = self.loss_function()
+        else:
+            assert False, f'{loss} is not defined as a loss function'
+
         # optimizer
         self.optimizer, self.step = self.prepare_optimizer()
 
@@ -256,6 +262,22 @@ class AdHominem():
 
         # define contrastive loss:
         l1 = tf.multiply(tf.subtract(1.0, labels), tf.square(tf.maximum(tf.subtract(pred, t_d), 0.0)))
+        l2 = tf.multiply(labels, tf.square(tf.maximum(tf.subtract(t_s, pred), 0.0)))
+        loss = tf.add(l1, l2)
+        loss = tf.reduce_mean(loss)
+
+        return loss
+
+    ###############
+    # loss function
+    ###############
+    def contrastive_loss_function(self):
+        t_s = self.hyper_parameters['t_s']
+        labels = self.placeholders['labels']
+        pred = self.pred
+
+        # define contrastive loss:
+        l1 = tf.multiply(tf.subtract(1.0, labels), tf.square(tf.maximum(tf.subtract(pred, t_s), 0.0)))
         l2 = tf.multiply(labels, tf.square(tf.maximum(tf.subtract(t_s, pred), 0.0)))
         loss = tf.add(l1, l2)
         loss = tf.reduce_mean(loss)
@@ -1212,7 +1234,6 @@ class AdHominem():
                     print(s)
 
             # compute accuracy on train set
-            # TODO: Update this to include the evaluation metrics used in the PAN competition
             acc_tr = self.compute_accuracy(TP, FP, TN, FN)
             # compute accuracy on test set (including PAN 2020 metrics and grid search for threshold)
             acc_te, scores, th = self.evaluate_model(docs_L_te, docs_R_te, labels_te, batch_size_te)
