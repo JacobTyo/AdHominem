@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from adhominem import AdHominem
 from adhominem_noCNN import AdHominem_NoCNN
+from adhominem_noFastText import AdHominem_NoFastText
 import pickle
 import os
 import argparse
@@ -33,6 +34,7 @@ def main():
     parser.add_argument('-results_file', default='results.txt', type=str)
     parser.add_argument('-loss', default='modified_contrastive', type=str)
     parser.add_argument('-no_cnn', action='store_true')
+    parser.add_argumnet('-no_fasttext', action='store_true')
     hyper_parameters = vars(parser.parse_args())
 
     # create folder for results
@@ -77,6 +79,10 @@ def main():
         adhominem = AdHominem_NoCNN(hyper_parameters=hyper_parameters,
                                     E_w_init=E_w
                                     )
+    elif hyper_parameters['no_fasttext']:
+        adhominem = AdHominem_NoFastText(hyper_parameters=hyper_parameters,
+                                         E_w_init=E_w
+                                         )
     else:
         adhominem = AdHominem(hyper_parameters=hyper_parameters,
                               E_w_init=E_w

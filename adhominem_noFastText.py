@@ -7,7 +7,7 @@ from sklearn.utils import shuffle
 from eval_metrics import evaluate_all
 
 
-class AdHominem():
+class AdHominem_NoFastText():
     """
         AdHominem describes a Siamese network topology for (binary) authorship verification, also known as pairwise
         (1:1) forensic text comparison.
