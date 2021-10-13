@@ -29,6 +29,7 @@ def main():
     parser.add_argument('-keep_prob_lstm', default=0.9, type=float)  # variational dropout for BiLSTM layer
     parser.add_argument('-keep_prob_att', default=0.9, type=float)  # dropout for attention layer
     parser.add_argument('-keep_prob_metric', default=0.9, type=float)  # dropout for metric learning layer
+    parser.add_argument('-results_file', default='results.txt', type=str)
     hyper_parameters = vars(parser.parse_args())
 
     # create folder for results
@@ -49,7 +50,7 @@ def main():
     hyper_parameters['N_dev'] = len(labels_te)
 
     # file to store results epoch-wise
-    file_results = os.path.join(dir_results, 'results.txt')
+    file_results = os.path.join(dir_results, hyper_parameters['results_file'])
 
     # delete already existing files
     if os.path.isfile(file_results):
