@@ -209,11 +209,12 @@ class AdHominem():
     ################################################
     def feature_extraction(self, e_c, e_w, N_w, N_s):
 
-        with tf.variable_scope('characters_to_word_encoding'):
-            r_c = self.cnn_layer_cw(e_c)
+        # with tf.variable_scope('characters_to_word_encoding'):
+        #     r_c = self.cnn_layer_cw(e_c)
         with tf.variable_scope('words_to_sentence_encoding'):
-            e_cw = tf.concat([e_w, r_c], axis=3)
-            h_w = self.bilstm_layer_ws(e_cw, N_w)
+            # e_cw = tf.concat([e_w, r_c], axis=3)
+            # h_w = self.bilstm_layer_ws(e_cw, N_w)
+            h_w = self.bilstm_layer_ws(e_w, N_w)
             e_s = self.att_layer_ws(h_w, N_w)
         with tf.variable_scope('sentences_to_document_encoding'):
             h_s = self.bilstm_layer_sd(e_s, N_s)
@@ -384,7 +385,7 @@ class AdHominem():
         # reshape N_w, shape = [2 * B * T_s]
         N_w = tf.reshape(N_w, shape=[2 * self.B * T_s])
         # reshape input word embeddings, shape = [2 * B * T_s, T_w, D_w + D_r]
-        e_w_f = tf.reshape(e_w_f, shape=[2 * self.B * T_s, T_w, D_w + D_r])
+        e_w_f = tf.reshape(e_w_f, shape=[2 * self.B * T_s, T_w, D_w])  # + D_r])
         # reverse input sentences
         e_w_b = tf.reverse_sequence(e_w_f, seq_lengths=N_w, seq_axis=1)
 
