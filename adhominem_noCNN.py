@@ -735,7 +735,7 @@ class AdHominem_NoCNN():
                                                     )
         with tf.variable_scope('dropout_lstm_ws_forward'):
             dropout['lstm_ws_forward'] = {}
-            dropout['lstm_ws_forward']['x'] = self.make_dropout_mask(shape=[self.B * T_s, D_w + D_r],
+            dropout['lstm_ws_forward']['x'] = self.make_dropout_mask(shape=[self.B * T_s, D_w],  # + D_r],
                                                                      keep_prob=self.hyper_parameters['keep_prob_lstm'],
                                                                      )
             dropout['lstm_ws_forward']['h'] = self.make_dropout_mask(shape=[self.B * T_s, D_s],
@@ -743,7 +743,7 @@ class AdHominem_NoCNN():
                                                                      )
         with tf.variable_scope('dropout_lstm_ws_backward'):
             dropout['lstm_ws_backward'] = {}
-            dropout['lstm_ws_backward']['x'] = self.make_dropout_mask(shape=[self.B * T_s, D_w + D_r],
+            dropout['lstm_ws_backward']['x'] = self.make_dropout_mask(shape=[self.B * T_s, D_w],  # + D_r],
                                                                       keep_prob=self.hyper_parameters['keep_prob_lstm'],
                                                                       )
             dropout['lstm_ws_backward']['h'] = self.make_dropout_mask(shape=[self.B * T_s, D_s],
@@ -804,9 +804,9 @@ class AdHominem_NoCNN():
             theta['cnn'] = self.initialize_cnn(D_c, D_r, h)
 
         with tf.variable_scope('theta_lstm_ws_forward'):
-            theta['lstm_ws_forward'] = self.initialize_lstm(D_w + D_r, D_s)
+            theta['lstm_ws_forward'] = self.initialize_lstm(D_w, D_s)  # (D_w + D_r, D_s)
         with tf.variable_scope('theta_lstm_ws_backward'):
-            theta['lstm_ws_backward'] = self.initialize_lstm(D_w + D_r, D_s)
+            theta['lstm_ws_backward'] = self.initialize_lstm(D_w, D_s)  # (D_w + D_r, D_s)
 
         with tf.variable_scope('theta_lstm_sd_forward'):
             theta['lstm_sd_forward'] = self.initialize_lstm(2 * D_s, D_d)
