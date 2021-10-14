@@ -36,7 +36,10 @@ def main():
     parser.add_argument('-no_cnn', action='store_true')
     parser.add_argument('-no_fasttext', action='store_true')
     parser.add_argument('-vocab_wordemb_file', default='/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl', type=str)
+    parser.add_argument('-device', default='0', type=str)
     hyper_parameters = vars(parser.parse_args())
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
 
     # create folder for results
     dir_results = os.path.join('results')
