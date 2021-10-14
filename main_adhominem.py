@@ -35,6 +35,7 @@ def main():
     parser.add_argument('-loss', default='modified_contrastive', type=str)
     parser.add_argument('-no_cnn', action='store_true')
     parser.add_argument('-no_fasttext', action='store_true')
+    parser.add_argument('-vocab_wordemb_file', default='/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl', type=str)
     hyper_parameters = vars(parser.parse_args())
 
     # create folder for results
@@ -43,7 +44,7 @@ def main():
         os.makedirs(dir_results)
 
     # load docs, vocabularies and initialized word embeddings
-    with open('/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl', 'rb') as f:
+    with open(hyper_parameters['vocab_wordemb_file'], 'rb') as f:
         docs_L_tr, docs_R_tr, labels_tr, \
         docs_L_te, docs_R_te, labels_te, \
         V_w, E_w, V_c = pickle.load(f)
