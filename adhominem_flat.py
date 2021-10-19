@@ -643,6 +643,8 @@ class AdHominem_flat():
         # combine to get sentence representations, shape=[2 * B, T_s, 2 * D_s]
         e_s = tf.reduce_sum(tf.multiply(alpha, h_w), axis=2, keepdims=False)
 
+        e_s = tf.squeeze(e_s)
+
         return e_s
 
     ####################################################
