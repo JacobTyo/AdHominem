@@ -2,6 +2,7 @@
 from adhominem import AdHominem
 from adhominem_noCNN import AdHominem_NoCNN
 from adhominem_noFastText import AdHominem_NoFastText
+from adhominem_flat import AdHominem_flat
 import pickle
 import os
 import argparse
@@ -37,6 +38,7 @@ def main():
     parser.add_argument('-no_fasttext', action='store_true')
     parser.add_argument('-vocab_wordemb_file', default='/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl', type=str)
     parser.add_argument('-device', default='0', type=str)
+    parser.add_argument('-flatten', action='store_true')
     hyper_parameters = vars(parser.parse_args())
 
     os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
@@ -87,6 +89,10 @@ def main():
         adhominem = AdHominem_NoFastText(hyper_parameters=hyper_parameters,
                                          E_w_init=E_w
                                          )
+    elif hyper_parameters['flatten']:
+        adhominem = AdHominem_flat(hyper_parameters=hyper_parameters,
+                                   E_w_init=E_w
+                                   )
     else:
         adhominem = AdHominem(hyper_parameters=hyper_parameters,
                               E_w_init=E_w
