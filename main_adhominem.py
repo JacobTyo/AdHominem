@@ -3,6 +3,7 @@ from adhominem import AdHominem
 from adhominem_noCNN import AdHominem_NoCNN
 from adhominem_noFastText import AdHominem_NoFastText
 from adhominem_flat import AdHominem_flat
+from adhominem_noCNN_flat import AdHominem_NoCNN_flat
 import pickle
 import os
 import argparse
@@ -81,7 +82,11 @@ def main():
             open(file_results, 'a').write(hp + ': ' + str(hyper_parameters[hp]) + '\n')
 
     # load neural network model
-    if hyper_parameters['no_cnn']:
+    if hyper_parameters['no_cnn'] and hyper_parameters['flatten']:
+        adhominem = AdHominem_NoCNN_flat(hyper_parameters=hyper_parameters,
+                                         E_w_init=E_w
+                                         )
+    elif hyper_parameters['no_cnn']:
         adhominem = AdHominem_NoCNN(hyper_parameters=hyper_parameters,
                                     E_w_init=E_w
                                     )
