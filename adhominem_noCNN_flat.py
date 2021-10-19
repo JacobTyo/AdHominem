@@ -220,7 +220,7 @@ class AdHominem_NoCNN_flat():
         #     h_s = self.bilstm_layer_sd(e_s, N_s)
         #     e_d = self.att_layer_sd(h_s, N_s)
 
-        return e_d
+        return e_s
 
     ##########################################
     # compute distance between feature vectors
