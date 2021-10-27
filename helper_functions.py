@@ -34,7 +34,8 @@ def load_glove_model(fp):
                 glove_model[word] = embedding
             except:
                 print(f'dropping the embedding for: {word}')
-    
+                print(f'some context: {split_line[0:5]}')
+
     print(f"{len(glove_model)} words loaded!")
     return glove_model
 
