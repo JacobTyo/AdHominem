@@ -25,7 +25,7 @@ TOKENIZER = spacy.load('en_core_web_lg')
 def load_glove_model(fp):
     print("Loading Glove Model")
     glove_model = {}
-    with open(fp, 'r') as f:
+    with open(fp, 'r', encoding='utf-8') as f:
         for line in f:
             split_line = line.split()
             word = split_line[0]
