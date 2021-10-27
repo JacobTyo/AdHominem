@@ -21,6 +21,20 @@ csv.field_size_limit(sys.maxsize)
 
 TOKENIZER = spacy.load('en_core_web_lg')
 
+
+def load_glove_model(fp):
+    print("Loading Glove Model")
+    glove_model = {}
+    with open(fp, 'r') as f:
+        for line in f:
+            split_line = line.split()
+            word = split_line[0]
+            embedding = np.array(split_line[1:], dtype=np.float64)
+            glove_model[word] = embedding
+    print(f"{len(glove_model)} words loaded!")
+    return glove_model
+
+
 def add_special_tokens_doc_multiproc(doc, T_w):
     # add <SOS>
     N_w = []
@@ -122,7 +136,7 @@ class Corpus(object):
         Class for data preprocessing (8000 Amazon review pairs)
     """
     def __init__(self, test_split=0.2, T_w=20, D_w=300, vocab_size_token=15000, vocab_size_chr=125, dataset='amazon',
-                 train_path=None, test_path=None):
+                 train_path=None, test_path=None, embeddings='fasttext'):
 
         # define Spacy tokenizer
         self.tokenizer = spacy.load('en_core_web_lg')
@@ -133,7 +147,12 @@ class Corpus(object):
             self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon_short.csv')), sep='\t')
 
             # load pre-trained fastText word embedding model
-            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+            if embeddings == 'fasttext':
+                self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+            elif embeddings == 'glove':
+                self.WE_dic = load_glove_model('glove.840B.300d.txt')
+            else:
+                assert False, f'{embeddings} is not a supported embedding'
 
             # dimension of word embeddings
             self.D_w = D_w
@@ -207,7 +226,12 @@ class Corpus(object):
             self.data_panda = pd.concat([train_df, test_df], ignore_index=True)
 
             # load pre-trained fastText word embedding model
-            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+            if embeddings == 'fasttext':
+                self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+            elif embeddings == 'glove':
+                self.WE_dic = load_glove_model('glove.840B.300d.txt')
+            else:
+                assert False, f'{embeddings} is not a supported embedding'
 
             # dimension of word embeddings
             self.D_w = D_w
