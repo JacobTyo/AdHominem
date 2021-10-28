@@ -456,7 +456,11 @@ class Corpus(object):
                 self.E_w[idx, :] = np.random.uniform(low=-r, high=r, size=(1, self.D_w))
             else:
                 # initialize pre-trained tokens
-                self.E_w[idx, :] = self.WE_dic[token]
+                try:
+                    self.E_w[idx, :] = self.WE_dic[token]
+                except Exception:
+                    # the <ZP> token wasn't found? replace it with something else?
+                    self.E_w[idx, :] = self.WE_dic['SAM']
 
         for c in self.list_characters:
             self.V_c[c] = len(self.V_c)
