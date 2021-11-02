@@ -975,7 +975,7 @@ class AdHominem():
     ################
     @staticmethod
     def grid_search(pred, labels):
-        L = list(np.linspace(0, 0.3, 31))
+        L = list(np.linspace(0, 1, 100))
         scores = []
         scores_o = []
         pred.reshape(-1)
