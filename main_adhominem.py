@@ -37,12 +37,13 @@ def main():
     parser.add_argument('-loss', default='modified_contrastive', type=str)
     parser.add_argument('-no_cnn', action='store_true')
     parser.add_argument('-no_fasttext', action='store_true')
-    parser.add_argument('-vocab_wordemb_file', default='/home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl', type=str)
+    parser.add_argument('-vocab_wordemb_file', default='data/amazon.pkl', type=str)
+    # /home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl
     parser.add_argument('-device', default='0', type=str)
     parser.add_argument('-flatten', action='store_true')
     hyper_parameters = vars(parser.parse_args())
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
+    # os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
 
     # create folder for results
     dir_results = os.path.join('results')
