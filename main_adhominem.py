@@ -7,6 +7,8 @@ from adhominem_noCNN_flat import AdHominem_NoCNN_flat
 import pickle
 import os
 import argparse
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
 
 
 def main():
@@ -105,6 +107,11 @@ def main():
     # start training
     train_set = (docs_L_tr, docs_R_tr, labels_tr)
     test_set = (docs_L_te, docs_R_te, labels_te)
+
+
+    model_vars = tf.trainable_variables()
+    slim.model_analyzer.analyze_vars(model_vars, print_info=True)
+
     adhominem.train_model(train_set, test_set, file_results)
 
     # close session

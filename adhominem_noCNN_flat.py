@@ -110,23 +110,23 @@ class AdHominem_NoCNN_flat():
                                )
 
         # initialize embedding matrix for characters
-        with tf.variable_scope('character_embedding_matrix'):
-            # zero-padding embedding
-            E_c_0 = tf.zeros(shape=[1, D_c], dtype=tf.float32)
-            # trainable embeddings
-            r = 0.1
-            E_c_1 = tf.get_variable(name='E_c_1',
-                                    shape=[len(V_c) - 1, D_c],
-                                    initializer=tf.initializers.random_uniform(minval=-r, maxval=r),
-                                    trainable=True,
-                                    dtype=tf.float32,
-                                    )
-            # concatenate special-token embeddings + regular-token embeddings
-            E_c = tf.concat([E_c_0, E_c_1], axis=0)
-
-        # character embeddings, shape=[B, T_s, T_w, T_c, D_c]
-        e_c_L = tf.nn.embedding_lookup(E_c, x_c_L)
-        e_c_R = tf.nn.embedding_lookup(E_c, x_c_R)
+        # with tf.variable_scope('character_embedding_matrix'):
+        #     # zero-padding embedding
+        #     E_c_0 = tf.zeros(shape=[1, D_c], dtype=tf.float32)
+        #     # trainable embeddings
+        #     r = 0.1
+        #     E_c_1 = tf.get_variable(name='E_c_1',
+        #                             shape=[len(V_c) - 1, D_c],
+        #                             initializer=tf.initializers.random_uniform(minval=-r, maxval=r),
+        #                             trainable=True,
+        #                             dtype=tf.float32,
+        #                             )
+        #     # concatenate special-token embeddings + regular-token embeddings
+        #     E_c = tf.concat([E_c_0, E_c_1], axis=0)
+        #
+        # # character embeddings, shape=[B, T_s, T_w, T_c, D_c]
+        # e_c_L = tf.nn.embedding_lookup(E_c, x_c_L)
+        # e_c_R = tf.nn.embedding_lookup(E_c, x_c_R)
 
         # word-based placeholder for two documents
         x_w_L = tf.placeholder(dtype=tf.int32, shape=[None, T_s, T_w], name='x_w_L')
@@ -196,7 +196,7 @@ class AdHominem_NoCNN_flat():
                         'lr': lr,
                         }
 
-        thetas_E = {'E_c_1': E_c_1,
+        thetas_E = {#'E_c_1': E_c_1,
                     'E_w_1': E_w_1,
                     }
         if train_word_embeddings:
@@ -752,22 +752,22 @@ class AdHominem_NoCNN_flat():
             dropout['lstm_ws_backward']['h'] = self.make_dropout_mask(shape=[self.B * T_s, D_s],
                                                                       keep_prob=self.hyper_parameters['keep_prob_lstm'],
                                                                       )
-        with tf.variable_scope('dropout_lstm_sd_forward'):
-            dropout['lstm_sd_forward'] = {}
-            dropout['lstm_sd_forward']['x'] = self.make_dropout_mask(shape=[self.B, 2 * D_s],
-                                                                     keep_prob=self.hyper_parameters['keep_prob_lstm'],
-                                                                     )
-            dropout['lstm_sd_forward']['h'] = self.make_dropout_mask(shape=[self.B, D_d],
-                                                                     keep_prob=self.hyper_parameters['keep_prob_lstm'],
-                                                                     )
-        with tf.variable_scope('dropout_lstm_sd_backward'):
-            dropout['lstm_sd_backward'] = {}
-            dropout['lstm_sd_backward']['x'] = self.make_dropout_mask(shape=[self.B, 2 * D_s],
-                                                                      keep_prob=self.hyper_parameters['keep_prob_lstm'],
-                                                                      )
-            dropout['lstm_sd_backward']['h'] = self.make_dropout_mask(shape=[self.B, D_d],
-                                                                      keep_prob=self.hyper_parameters['keep_prob_lstm'],
-                                                                      )
+        # with tf.variable_scope('dropout_lstm_sd_forward'):
+        #     dropout['lstm_sd_forward'] = {}
+        #     dropout['lstm_sd_forward']['x'] = self.make_dropout_mask(shape=[self.B, 2 * D_s],
+        #                                                              keep_prob=self.hyper_parameters['keep_prob_lstm'],
+        #                                                              )
+        #     dropout['lstm_sd_forward']['h'] = self.make_dropout_mask(shape=[self.B, D_d],
+        #                                                              keep_prob=self.hyper_parameters['keep_prob_lstm'],
+        #                                                              )
+        # with tf.variable_scope('dropout_lstm_sd_backward'):
+        #     dropout['lstm_sd_backward'] = {}
+        #     dropout['lstm_sd_backward']['x'] = self.make_dropout_mask(shape=[self.B, 2 * D_s],
+        #                                                               keep_prob=self.hyper_parameters['keep_prob_lstm'],
+        #                                                               )
+        #     dropout['lstm_sd_backward']['h'] = self.make_dropout_mask(shape=[self.B, D_d],
+        #                                                               keep_prob=self.hyper_parameters['keep_prob_lstm'],
+        #                                                               )
         with tf.variable_scope('dropout_att_ws'):
             dropout['att_ws'] = {}
             dropout['att_ws']['Wb'] = self.make_dropout_mask(shape=[self.B, T_s, 1, 2 * D_s],
@@ -776,14 +776,14 @@ class AdHominem_NoCNN_flat():
             dropout['att_ws']['v'] = self.make_dropout_mask(shape=[self.B * T_s, 1, D_s],
                                                             keep_prob=self.hyper_parameters['keep_prob_att'],
                                                             )
-        with tf.variable_scope('dropout_att_sd'):
-            dropout['att_sd'] = {}
-            dropout['att_sd']['Wb'] = self.make_dropout_mask(shape=[self.B, 1, 2 * D_d],
-                                                             keep_prob=self.hyper_parameters['keep_prob_att'],
-                                                             )
-            dropout['att_sd']['v'] = self.make_dropout_mask(shape=[self.B, 1, D_d],
-                                                            keep_prob=self.hyper_parameters['keep_prob_att'],
-                                                            )
+        # with tf.variable_scope('dropout_att_sd'):
+        #     dropout['att_sd'] = {}
+        #     dropout['att_sd']['Wb'] = self.make_dropout_mask(shape=[self.B, 1, 2 * D_d],
+        #                                                      keep_prob=self.hyper_parameters['keep_prob_att'],
+        #                                                      )
+        #     dropout['att_sd']['v'] = self.make_dropout_mask(shape=[self.B, 1, D_d],
+        #                                                     keep_prob=self.hyper_parameters['keep_prob_att'],
+        #                                                     )
         with tf.variable_scope('dropout_metric'):
             dropout['metric'] = {}
             dropout['metric']['x'] = self.make_dropout_mask(shape=[self.B, 2 * D_d],
@@ -811,15 +811,15 @@ class AdHominem_NoCNN_flat():
         with tf.variable_scope('theta_lstm_ws_backward'):
             theta['lstm_ws_backward'] = self.initialize_lstm(D_w, D_s)  # (D_w + D_r, D_s)
 
-        with tf.variable_scope('theta_lstm_sd_forward'):
-            theta['lstm_sd_forward'] = self.initialize_lstm(2 * D_s, D_d)
-        with tf.variable_scope('theta_lstm_sd_backward'):
-            theta['lstm_sd_backward'] = self.initialize_lstm(2 * D_s, D_d)
+        # with tf.variable_scope('theta_lstm_sd_forward'):
+        #     theta['lstm_sd_forward'] = self.initialize_lstm(2 * D_s, D_d)
+        # with tf.variable_scope('theta_lstm_sd_backward'):
+        #     theta['lstm_sd_backward'] = self.initialize_lstm(2 * D_s, D_d)
 
         with tf.variable_scope('theta_att_ws'):
             theta['att_ws'] = self.initialize_att(2 * D_s, D_s)
-        with tf.variable_scope('theta_att_sd'):
-            theta['att_sd'] = self.initialize_att(2 * D_d, D_d)
+        # with tf.variable_scope('theta_att_sd'):
+        #     theta['att_sd'] = self.initialize_att(2 * D_d, D_d)
 
         with tf.variable_scope('theta_metric'):
             theta['metric'] = self.initialize_mlp(2 * D_d, D_mlp)
