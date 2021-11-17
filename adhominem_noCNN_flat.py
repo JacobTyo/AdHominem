@@ -177,8 +177,8 @@ class AdHominem_NoCNN_flat():
         placeholders = {'x_c_L': x_c_L,
                         'x_c_R': x_c_R,
                         #
-                        'e_c_L': e_c_L,
-                        'e_c_R': e_c_R,
+                        # 'e_c_L': e_c_L,
+                        # 'e_c_R': e_c_R,
                         #
                         'x_w_L': x_w_L,
                         'x_w_R': x_w_R,
