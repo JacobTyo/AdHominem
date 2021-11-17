@@ -149,7 +149,7 @@ class Corpus(object):
         if dataset == 'amazon':
 
             # load raw data
-            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon_short.csv')), sep='\t')
+            self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
 
             # load pre-trained fastText word embedding model
             if embeddings == 'fasttext':
@@ -320,7 +320,7 @@ class Corpus(object):
     # extract docs
     def extract_docs(self):
 
-        with Pool(processes=100) as pool:
+        with Pool(processes=10) as pool:
 
             async_results = {}
 
@@ -464,3 +464,47 @@ class Corpus(object):
 
         for c in self.list_characters:
             self.V_c[c] = len(self.V_c)
+
+    def extract_docs_single_thread(self):
+
+        for idx in tqdm(range(self.data_panda.review.shape[0]), desc='preprocess docs'):
+
+            temp = self.data_panda.review[idx].split('$$$')
+
+            if random.uniform(0, 1) < 0.5:
+                doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+                doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+            else:
+                doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+                doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+
+            # preprocessing and tokenizing
+            doc_1 = self.preprocess_doc(doc_1)
+            doc_2 = self.preprocess_doc(doc_2)
+
+            r = random.uniform(0, 1)
+
+            if r > self.test_split:
+                # count tokens/characters in train set
+                self.count_tokens_and_characters(doc_1)
+                self.count_tokens_and_characters(doc_2)
+
+            # add special tokens
+            doc_1 = self.add_special_tokens_doc(doc_1)
+            doc_2 = self.add_special_tokens_doc(doc_2)
+
+            if r > self.test_split:
+                # add doc-pair to train set
+                self.docs_L_tr.append(doc_1)
+                self.docs_R_tr.append(doc_2)
+                self.labels_tr.append(self.data_panda.sentiment[idx])
+
+            else:
+                # ad doc-pair to test set
+                self.docs_L_te.append(doc_1)
+                self.docs_R_te.append(doc_2)
+                self.labels_te.append(self.data_panda.sentiment[idx])
+
+        # shuffle
+        self.docs_L_tr, self.docs_R_tr, self.labels_tr = shuffle(self.docs_L_tr, self.docs_R_tr, self.labels_tr)
+        self.docs_L_te, self.docs_R_te, self.labels_te = shuffle(self.docs_L_te, self.docs_R_te, self.labels_te)
