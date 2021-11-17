@@ -38,7 +38,7 @@ class AdHominem_NoCNN_flat():
         self.dropout = self.initialize_dropout()
 
         with tf.variable_scope('feature_extraction_doc2vec'):
-            e_c = tf.concat([self.placeholders['e_c_L'], self.placeholders['e_c_R']], axis=0)
+            e_c = None # tf.concat([self.placeholders['e_c_L'], self.placeholders['e_c_R']], axis=0)
             e_w = tf.concat([self.placeholders['e_w_L'], self.placeholders['e_w_R']], axis=0)
             N_w = tf.concat([self.placeholders['N_w_L'], self.placeholders['N_w_R']], axis=0)
             N_s = tf.concat([self.placeholders['N_s_L'], self.placeholders['N_s_R']], axis=0)
