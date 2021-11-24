@@ -107,7 +107,11 @@ def preprocess_multiproc(doc): #, tokenizer):
     return doc_new
 
 def extract_docs_work(review, label, is_test_datapoint, tokenizer=None, T_w=None):
-    temp = review.split('$$$')
+    try:
+        temp = review.split('$$$')
+    except Exception:
+        print('wtf. . . ')
+        print(review)
 
     if random.uniform(0, 1) < 0.5:
         doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
