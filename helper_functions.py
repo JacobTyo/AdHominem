@@ -216,10 +216,10 @@ class Corpus(object):
                 if not pth:
                     assert False, 'path to train and test data must be set'
 
-                df = pd.read_csv(train_path, names=['review', 'text2', 'sentiment'],
+                df = pd.read_csv(pth, names=['review', 'text2', 'sentiment'],
                                  dtype={'review': str, 'text2': str, 'sentiment': int})
 
-                df['review'] = df['review'] + '$$$' + df['text2']
+                df['review'] = df['review'] + ' $$$ ' + df['text2']
                 df = df.drop(columns=['text2'])
                 df['is_test_datapoint'] = 1 if test_set else 0
                 return df
@@ -414,6 +414,7 @@ class Corpus(object):
                         doc_new.append(' '.join(tokens))
                     sent = ['<SLB>'] + sent[self.T_w - 1:]
 
+        # this is a list of sentences, so given a single doc, return a list of processed sentences, only T_w chars per sentence?
         return doc_new
 
     def count_tokens_and_characters(self, doc):
