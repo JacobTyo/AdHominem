@@ -107,22 +107,18 @@ def preprocess_multiproc(doc): #, tokenizer):
     return doc_new
 
 def extract_docs_work(review, label, is_test_datapoint, tokenizer=None, T_w=None):
-    try:
-        temp = review.split('$$$')
-    except Exception:
-        print('wtf. . . ')
-        print(review)
+    doc1, doc2 = review.split('$$$')
 
-    if random.uniform(0, 1) < 0.5:
-        doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-        doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-    else:
-        doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
-        doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+    # if random.uniform(0, 1) < 0.5:
+    #     doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+    #     doc_2 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+    # else:
+    #     doc_2 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
+    #     doc_1 = BeautifulSoup(temp[1], 'html.parser').get_text().encode('utf-8').decode('utf-8')
 
     # preprocessing and tokenizing
-    doc_1 = preprocess_multiproc(doc_1) # , tokenizer)
-    doc_2 = preprocess_multiproc(doc_2) # , tokenizer)
+    doc_1 = preprocess_multiproc(doc1.encode('utf-8').decode('utf-8'))  # , tokenizer)
+    doc_2 = preprocess_multiproc(doc2.encode('utf-8').decode('utf-8'))  # , tokenizer)
 
     char_counts1, token_counts1 = None, None
     char_counts2, token_counts2 = None, None
@@ -228,7 +224,11 @@ class Corpus(object):
                 df['is_test_datapoint'] = 1 if test_set else 0
                 return df
 
+            print('importing the training dataset')
+
             train_df = get_gdataset(train_path, False)
+
+            print('moving on to the test dataset ')
 
             test_df = get_gdataset(test_path, True)
 

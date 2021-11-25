@@ -45,7 +45,7 @@ def main():
     parser.add_argument('-flatten', action='store_true')
     hyper_parameters = vars(parser.parse_args())
 
-    # os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
+    os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
 
     # create folder for results
     dir_results = os.path.join('results')
