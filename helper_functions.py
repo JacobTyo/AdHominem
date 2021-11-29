@@ -39,6 +39,11 @@ def load_glove_model(fp):
     print(f"{len(glove_model)} words loaded!")
     return glove_model
 
+def remove_dollaz(txt):
+    txt.replace('$$$', '&&&')
+    if '$$$' in txt:
+        remove_dollaz(txt)
+    return txt
 
 def get_csvdataset(pth, test_set):
     if not pth:
@@ -47,7 +52,7 @@ def get_csvdataset(pth, test_set):
     df = pd.read_csv(pth, names=['review', 'text2', 'sentiment'],
                      dtype={'review': str, 'text2': str, 'sentiment': int})
 
-    df['review'] = df['review'].replace('$$$', '---') + ' $$$ ' + df['text2'].replace('$$$', '---')
+    df['review'] = remove_dollaz(df['review']) + ' $$$ ' + remove_dollaz(df['text2'])
     df = df.drop(columns=['text2'])
     df['is_test_datapoint'] = 1 if test_set else 0
     return df
