@@ -125,7 +125,12 @@ def preprocess_multiproc(doc): #, tokenizer):
     return doc_new
 
 def extract_docs_work(review, label, is_test_datapoint, tokenizer=None, T_w=None):
-    doc1, doc2 = review.split('$$$')
+    tmp = review.split('$$$')
+    if len(tmp) > 2:
+        print(f'there were {len(tmp)} texts after splitting. . . just getting first and last, {len(tmp[0])}, {len(tmp[-1])}')
+        doc1, doc2 = tmp[0], tmp[-1]
+    else:
+        doc1, doc2 = tmp
 
     # if random.uniform(0, 1) < 0.5:
     #     doc_1 = BeautifulSoup(temp[0], 'html.parser').get_text().encode('utf-8').decode('utf-8')
