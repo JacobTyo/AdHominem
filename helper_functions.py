@@ -40,6 +40,19 @@ def load_glove_model(fp):
     return glove_model
 
 
+def get_csvdataset(pth, test_set):
+    if not pth:
+        assert False, 'path to train and test data must be set'
+
+    df = pd.read_csv(pth, names=['review', 'text2', 'sentiment'],
+                     dtype={'review': str, 'text2': str, 'sentiment': int})
+
+    df['review'] = df['review'].replace('$$$', '---') + ' $$$ ' + df['text2'].replace('$$$', '---')
+    df = df.drop(columns=['text2'])
+    df['is_test_datapoint'] = 1 if test_set else 0
+    return df
+
+
 def add_special_tokens_doc_multiproc(doc, T_w):
     # add <SOS>
     N_w = []
@@ -205,32 +218,20 @@ class Corpus(object):
             # word embedding matrix
             self.E_w = None
 
-        elif dataset == 'gutenburg':
+        elif dataset == 'gutenburg' or dataset == 'csv':
 
             # load raw data into memory - read in the training data into a pandas dataframe
             # I think we want two columns
             #   reviews: both text snippets, separted by $$$
             #   sentiment: label
 
-            def get_gdataset(pth, test_set):
-                if not pth:
-                    assert False, 'path to train and test data must be set'
-
-                df = pd.read_csv(pth, names=['review', 'text2', 'sentiment'],
-                                 dtype={'review': str, 'text2': str, 'sentiment': int})
-
-                df['review'] = df['review'] + ' $$$ ' + df['text2']
-                df = df.drop(columns=['text2'])
-                df['is_test_datapoint'] = 1 if test_set else 0
-                return df
-
             print('importing the training dataset')
 
-            train_df = get_gdataset(train_path, False)
+            train_df = get_csvdataset(train_path, False)
 
             print('moving on to the test dataset ')
 
-            test_df = get_gdataset(test_path, True)
+            test_df = get_csvdataset(test_path, True)
 
             self.data_panda = pd.concat([train_df, test_df], ignore_index=True)
 
@@ -287,6 +288,7 @@ class Corpus(object):
 
             # word embedding matrix
             self.E_w = None
+
 
     def update_self(self, doc_1, doc_2, label, is_test_datapoint, char_counts1, token_counts1, char_counts2, token_counts2):
         if not is_test_datapoint:
