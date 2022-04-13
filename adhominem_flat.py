@@ -6,6 +6,8 @@ from math import ceil
 from sklearn.utils import shuffle
 from eval_metrics import evaluate_all
 
+import mlflow
+
 
 class AdHominem_flat():
     """
