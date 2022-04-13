@@ -10,8 +10,72 @@ import argparse
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
+import mlflow
 
-def main():
+
+def main(hyper_parameters):
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
+
+    # create folder for results
+    # dir_results = os.path.join('results')
+    # if not os.path.exists(dir_results):
+    #     os.makedirs(dir_results)
+
+    # load docs, vocabularies and initialized word embeddings
+    with open(hyper_parameters['vocab_wordemb_file'], 'rb') as f:
+        docs_L_tr, docs_R_tr, labels_tr, \
+        docs_L_te, docs_R_te, labels_te, \
+        V_w, E_w, V_c = pickle.load(f)
+
+    # add vocabularies to dictionary
+    hyper_parameters['V_w'] = V_w
+    hyper_parameters['V_c'] = V_c
+    hyper_parameters['N_tr'] = len(labels_tr)
+    hyper_parameters['N_dev'] = len(labels_te)
+
+    if not hyper_parameters['no_mlflow']:
+        for k in ['V_c', 'V_w']:
+            mlflow.log_param(k, len(hyper_parameters[k]))
+        for k in ['N_tr', 'N_dev']:
+            mlflow.log_param(k, hyper_parameters[k])
+
+    # load neural network model
+    if hyper_parameters['no_cnn'] and hyper_parameters['flatten']:
+        adhominem = AdHominem_NoCNN_flat(hyper_parameters=hyper_parameters,
+                                         E_w_init=E_w
+                                         )
+    elif hyper_parameters['no_cnn']:
+        adhominem = AdHominem_NoCNN(hyper_parameters=hyper_parameters,
+                                    E_w_init=E_w
+                                    )
+    elif hyper_parameters['no_fasttext']:
+        adhominem = AdHominem_NoFastText(hyper_parameters=hyper_parameters,
+                                         E_w_init=E_w
+                                         )
+    elif hyper_parameters['flatten']:
+        adhominem = AdHominem_flat(hyper_parameters=hyper_parameters,
+                                   E_w_init=E_w
+                                   )
+    else:
+        adhominem = AdHominem(hyper_parameters=hyper_parameters,
+                              E_w_init=E_w
+                              )
+    # start training
+    train_set = (docs_L_tr, docs_R_tr, labels_tr)
+    test_set = (docs_L_te, docs_R_te, labels_te)
+
+
+    model_vars = tf.trainable_variables()
+    slim.model_analyzer.analyze_vars(model_vars, print_info=True)
+
+    adhominem.train_model(train_set, test_set)
+
+    # close session
+    adhominem.sess.close()
+
+
+if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='AdHominem - Siamese Network for Authorship Verification')
     parser.add_argument('-D_c', default=10, type=int)  # character embedding dimension
@@ -43,81 +107,27 @@ def main():
     # /home/jtyo/Repos/AuthorshipAttribution/data/_gutenburg/train_test_adhominem.pkl
     parser.add_argument('-device', default='0', type=str)
     parser.add_argument('-flatten', action='store_true')
-    hyper_parameters = vars(parser.parse_args())
+    parser.add_argument('-no_mlflow', action='store_true')
+    parser.add_argument('-experiment_name', default='default', type=str)
+    parser.add_argument('-run_name', default='default', type=str)
+    args = parser.parse_args()
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = hyper_parameters['device']
 
-    # create folder for results
-    dir_results = os.path.join('results')
-    if not os.path.exists(dir_results):
-        os.makedirs(dir_results)
+    if args.no_mlflow:
+        main(vars(args))
 
-    # load docs, vocabularies and initialized word embeddings
-    with open(hyper_parameters['vocab_wordemb_file'], 'rb') as f:
-        docs_L_tr, docs_R_tr, labels_tr, \
-        docs_L_te, docs_R_te, labels_te, \
-        V_w, E_w, V_c = pickle.load(f)
-
-    # add vocabularies to dictionary
-    hyper_parameters['V_w'] = V_w
-    hyper_parameters['V_c'] = V_c
-    hyper_parameters['N_tr'] = len(labels_tr)
-    hyper_parameters['N_dev'] = len(labels_te)
-
-    # file to store results epoch-wise
-    file_results = os.path.join(dir_results, hyper_parameters['results_file'])
-
-    # delete already existing files
-    if os.path.isfile(file_results):
-        os.remove(file_results)
-
-    # write hyper-parameters setup into file (results.txt)
-    open(file_results, 'a').write('\n'
-                                   + '--------------------------------------------------------------------------------'
-                                   + '\nPARAMETER SETUP:\n'
-                                   + '--------------------------------------------------------------------------------'
-                                   + '\n'
-                                   )
-    for hp in hyper_parameters.keys():
-        if hp in ['V_c', 'V_w']:
-            open(file_results, 'a').write('num ' + hp + ': ' + str(len(hyper_parameters[hp])) + '\n')
-        else:
-            open(file_results, 'a').write(hp + ': ' + str(hyper_parameters[hp]) + '\n')
-
-    # load neural network model
-    if hyper_parameters['no_cnn'] and hyper_parameters['flatten']:
-        adhominem = AdHominem_NoCNN_flat(hyper_parameters=hyper_parameters,
-                                         E_w_init=E_w
-                                         )
-    elif hyper_parameters['no_cnn']:
-        adhominem = AdHominem_NoCNN(hyper_parameters=hyper_parameters,
-                                    E_w_init=E_w
-                                    )
-    elif hyper_parameters['no_fasttext']:
-        adhominem = AdHominem_NoFastText(hyper_parameters=hyper_parameters,
-                                         E_w_init=E_w
-                                         )
-    elif hyper_parameters['flatten']:
-        adhominem = AdHominem_flat(hyper_parameters=hyper_parameters,
-                                   E_w_init=E_w
-                                   )
     else:
-        adhominem = AdHominem(hyper_parameters=hyper_parameters,
-                              E_w_init=E_w
-                              )
-    # start training
-    train_set = (docs_L_tr, docs_R_tr, labels_tr)
-    test_set = (docs_L_te, docs_R_te, labels_te)
+        mlflow.set_tracking_uri('http://gs18196.sp.cs.cmu.edu:6460')
+        mlflow.set_experiment(args.experiment_name)
 
+        with mlflow.start_run(run_name=args.run_name):
 
-    model_vars = tf.trainable_variables()
-    slim.model_analyzer.analyze_vars(model_vars, print_info=True)
+            # log all of the args to mlflow
+            try:
+                for key, val in vars(args).items():
+                    mlflow.log_param(key, val)
+            except Exception as e:
+                for key, val in args.items():
+                    mlflow.log_param(key, val)
 
-    adhominem.train_model(train_set, test_set, file_results)
-
-    # close session
-    adhominem.sess.close()
-
-
-if __name__ == '__main__':
-    main()
+            main(vars(args))

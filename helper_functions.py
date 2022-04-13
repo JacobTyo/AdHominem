@@ -169,64 +169,64 @@ class Corpus(object):
         # define Spacy tokenizer
         self.tokenizer = spacy.load('en_core_web_lg')
 
+        # load pre-trained fastText word embedding model
+        if embeddings == 'fasttext':
+            self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
+        elif embeddings == 'glove':
+            self.WE_dic = load_glove_model('glove.840B.300d.txt')
+        else:
+            assert False, f'{embeddings} is not a supported embedding'
+
+        # dimension of word embeddings
+        self.D_w = D_w
+        # maximum words per sentence
+        self.T_w = T_w
+
+        # split size of test set
+        self.test_split = test_split
+
+        # train set
+        self.docs_L_tr = []
+        self.docs_R_tr = []
+        self.labels_tr = []
+
+        # test set
+        self.docs_L_te = []
+        self.docs_R_te = []
+        self.labels_te = []
+
+        # vocabulary sizes
+        self.vocab_size_token = vocab_size_token
+        self.vocab_size_chr = vocab_size_chr
+
+        # token/word-based vocabulary
+        self.V_w = {'<ZP>': 0,  # zero-padding
+                    '<UNK>': 1,  # unknown token
+                    '<SOS>': 2,  # start of sentence
+                    '<EOS>': 3,  # end of sentence
+                    '<SLB>': 4,  # start with line-break
+                    '<ELB>': 5,  # end with line-break
+                    }
+        # character vocabulary
+        self.V_c = {'<ZP>': 0,  # zero-padding character
+                    '<UNK>': 1,  # "unknown"-character
+                    }
+
+        # dictionary with token/character counts
+        self.dict_token_counts = {}
+        self.dict_chr_counts = {}
+
+        # unique list of most frequent tokens/characters
+        self.list_tokens = None
+        self.list_characters = None
+
+        # word embedding matrix
+        self.E_w = None
+
         if dataset == 'amazon':
 
             # load raw data
             self.data_panda = pd.read_csv('{}'.format(os.path.join('data', 'amazon.csv')), sep='\t')
-
-            # load pre-trained fastText word embedding model
-            if embeddings == 'fasttext':
-                self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
-            elif embeddings == 'glove':
-                self.WE_dic = load_glove_model('glove.840B.300d.txt')
-            else:
-                assert False, f'{embeddings} is not a supported embedding'
-
-            # dimension of word embeddings
-            self.D_w = D_w
-            # maximum words per sentence
-            self.T_w = T_w
-
-            # split size of test set
-            self.test_split = test_split
-
-            # train set
-            self.docs_L_tr = []
-            self.docs_R_tr = []
-            self.labels_tr = []
-
-            # test set
-            self.docs_L_te = []
-            self.docs_R_te = []
-            self.labels_te = []
-
-            # vocabulary sizes
-            self.vocab_size_token = vocab_size_token
-            self.vocab_size_chr = vocab_size_chr
-
-            # token/word-based vocabulary
-            self.V_w = {'<ZP>': 0,  # zero-padding
-                        '<UNK>': 1,  # unknown token
-                        '<SOS>': 2,  # start of sentence
-                        '<EOS>': 3,  # end of sentence
-                        '<SLB>': 4,  # start with line-break
-                        '<ELB>': 5,  # end with line-break
-                        }
-            # character vocabulary
-            self.V_c = {'<ZP>': 0,  # zero-padding character
-                        '<UNK>': 1,  # "unknown"-character
-                        }
-
-            # dictionary with token/character counts
-            self.dict_token_counts = {}
-            self.dict_chr_counts = {}
-
-            # unique list of most frequent tokens/characters
-            self.list_tokens = None
-            self.list_characters = None
-
-            # word embedding matrix
-            self.E_w = None
 
         elif dataset == 'gutenburg' or dataset == 'csv':
 
@@ -244,60 +244,6 @@ class Corpus(object):
             test_df = get_csvdataset(test_path, True)
 
             self.data_panda = pd.concat([train_df, test_df], ignore_index=True)
-
-            # load pre-trained fastText word embedding model
-            if embeddings == 'fasttext':
-                self.WE_dic = fasttext.load_model(os.path.join('data', 'cc.en.300.bin'))
-            elif embeddings == 'glove':
-                self.WE_dic = load_glove_model('glove.840B.300d.txt')
-            else:
-                assert False, f'{embeddings} is not a supported embedding'
-
-            # dimension of word embeddings
-            self.D_w = D_w
-            # maximum words per sentence
-            self.T_w = T_w
-
-            # split size of test set
-            self.test_split = test_split
-
-            # train set
-            self.docs_L_tr = []
-            self.docs_R_tr = []
-            self.labels_tr = []
-
-            # test set
-            self.docs_L_te = []
-            self.docs_R_te = []
-            self.labels_te = []
-
-            # vocabulary sizes
-            self.vocab_size_token = vocab_size_token
-            self.vocab_size_chr = vocab_size_chr
-
-            # token/word-based vocabulary
-            self.V_w = {'<ZP>': 0,  # zero-padding
-                        '<UNK>': 1,  # unknown token
-                        '<SOS>': 2,  # start of sentence
-                        '<EOS>': 3,  # end of sentence
-                        '<SLB>': 4,  # start with line-break
-                        '<ELB>': 5,  # end with line-break
-                        }
-            # character vocabulary
-            self.V_c = {'<ZP>': 0,  # zero-padding character
-                        '<UNK>': 1,  # "unknown"-character
-                        }
-
-            # dictionary with token/character counts
-            self.dict_token_counts = {}
-            self.dict_chr_counts = {}
-
-            # unique list of most frequent tokens/characters
-            self.list_tokens = None
-            self.list_characters = None
-
-            # word embedding matrix
-            self.E_w = None
 
 
     def update_self(self, doc_1, doc_2, label, is_test_datapoint, char_counts1, token_counts1, char_counts2, token_counts2):
