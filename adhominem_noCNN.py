@@ -1228,13 +1228,13 @@ class AdHominem_NoCNN():
                     curr_acc = self.compute_accuracy(curr_TP, curr_FP, curr_TN, curr_FN)
 
                     # log and print current results
-                    mlflow.log_metric('train/epoch', epoch)
-                    mlflow.log_metric('train/batch', round(100 * (i + 1) / num_batches_tr, 2))
-                    mlflow.log_metric('train/loss', np.mean(loss))
-                    mlflow.log_metric('train/acc', round(100 * (TP + TN) / (TP + FP + TN + FN), 2))
-                    mlflow.log_metric('train/curr Loss', round(curr_loss, 2))
-                    mlflow.log_metric('train/curr Acc', round(100 * curr_acc, 2))
-                    mlflow.log_metric('train/lr', round(float(lr[epoch]), 6))
+                    mlflow.log_metric('train/epoch', epoch, step=step)
+                    mlflow.log_metric('train/batch', round(100 * (i + 1) / num_batches_tr, 2), step=step)
+                    mlflow.log_metric('train/loss', np.mean(loss), step=step)
+                    mlflow.log_metric('train/acc', round(100 * (TP + TN) / (TP + FP + TN + FN), 2), step=step)
+                    mlflow.log_metric('train/curr Loss', round(curr_loss, 2), step=step)
+                    mlflow.log_metric('train/curr Acc', round(100 * curr_acc, 2), step=step)
+                    mlflow.log_metric('train/lr', round(float(lr[epoch]), 6), step=step)
 
                     s = "epoch:" + str(epoch) \
                         + ", batch: " + str(round(100 * (i + 1) / num_batches_tr, 2)) \
@@ -1251,16 +1251,12 @@ class AdHominem_NoCNN():
             acc_te, scores, th = self.evaluate_model(docs_L_te, docs_R_te, labels_te, batch_size_te)
 
             # log test results
-            mlflow.log_metric('test/epoch', epoch)
-            mlflow.log_metric('test/loss', round(float(np.mean(loss)), 4))
-            mlflow.log_metric('test/tr-acc', round(100 * acc_tr, 4))
-            mlflow.log_metric('test/te-acc', round(100 * acc_te, 4))
-            mlflow.log_metric('test/th', th)
+            mlflow.log_metric('test/loss', round(float(np.mean(loss)), 4), step=epoch)
+            mlflow.log_metric('test/tr-acc', round(100 * acc_tr, 4), step=epoch)
+            mlflow.log_metric('test/te-acc', round(100 * acc_te, 4), step=epoch)
+            mlflow.log_metric('test/th', th, step=epoch)
             for k, v in scores.items():
-                if k == 'c@1':
-                    mlflow.log_metric('test/c-at-1', v)
-                else:
-                    mlflow.log_metric(f'test/{k}', v)
+                mlflow.log_metric('test/c-at-1' if 'c@1' in k else f'test/{k}', v, step=epoch)
 
 
 
